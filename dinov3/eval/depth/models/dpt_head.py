@@ -514,19 +514,35 @@ class DPTHead(nn.Module):
         x = [inp for inp in inputs]
 
         x = self.reassemble_blocks(x)
+        if torch.isnan(x).any() or torch.isinf(x).any():
+            print("Warning: Reassemble blocks is producing NaNs")
         x = [self.convs[i](feature) for i, feature in enumerate(x)]
+        if torch.isnan(x).any() or torch.isinf(x).any():
+            print("Warning: Initial conv blocks is producing NaNs")
         out = self.fusion_blocks[0](x[-1])
+        if torch.isnan(out).any() or torch.isinf(out).any():
+            print("Warning: Fusion block 1 is producing NaNs")
 
         for i in range(1, len(self.fusion_blocks)):
             out = self.fusion_blocks[i](out, x[-(i + 1)])
+            if torch.isnan(out).any() or torch.isinf(out).any():
+                print(f"Warning: Fusion block {i} is producing NaNs")
 
         out = self.project(out)
+        if torch.isnan(out).any() or torch.isinf(out).any():
+            print(f"Warning: Final projection block is producing NaNs")
         return out
 
     def forward(self, inputs):
         out = self.forward_features(inputs)
-        return self.conv_depth(out)
+        out = self.conv_depth(out)
+        if torch.isnan(out).any() or torch.isinf(out).any():
+            print(f"Warning: Upconv is producing NaNs")
+        return out
 
     def predict(self, inputs, rescale_to=(512, 512)):
         out = self.forward_features(inputs)
-        return self.conv_depth.predict(out, rescale_to=rescale_to)
+        out = self.conv_depth.predict(out, rescale_to=rescale_to)
+        if torch.isnan(out).any() or torch.isinf(out).any():
+            print(f"Warning: Upconv is producing NaNs")
+        return out
