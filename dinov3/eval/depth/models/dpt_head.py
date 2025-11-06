@@ -514,11 +514,13 @@ class DPTHead(nn.Module):
         x = [inp for inp in inputs]
 
         x = self.reassemble_blocks(x)
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            print("Warning: Reassemble blocks is producing NaNs")
+        for z in x:
+            if torch.isnan(z).any() or torch.isinf(z).any():
+                print("Warning: Reassemble blocks is producing NaNs")
         x = [self.convs[i](feature) for i, feature in enumerate(x)]
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            print("Warning: Initial conv blocks is producing NaNs")
+        for z in x:
+            if torch.isnan(z).any() or torch.isinf(z).any():
+                print("Warning: Initial COnv blocks is producing NaNs")
         out = self.fusion_blocks[0](x[-1])
         if torch.isnan(out).any() or torch.isinf(out).any():
             print("Warning: Fusion block 1 is producing NaNs")
