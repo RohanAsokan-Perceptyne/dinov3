@@ -224,6 +224,7 @@ class ConvModule(nn.Module):
                 x = self.norm(x)
             elif layer == "act" and activate and self.with_activation:
                 x = self.activate(x)
+            print(f"Layer {layer} in ConvModule has stats: {x.min()} {x.mean()} {x.max()}")
         return x
 
 
