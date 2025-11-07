@@ -507,6 +507,8 @@ class DPTHead(nn.Module):
         assert self.num_reassemble_blocks == self.num_post_process_channels
         self.conv_depth = UpConvHead(self.channels, self.n_output_channels)
 
+        self.logger = None
+
     def forward_features(self, inputs):
         assert len(inputs) == self.num_reassemble_blocks, (
             f"Expected {self.num_reassemble_blocks} inputs, got {len(inputs)}."
@@ -516,35 +518,35 @@ class DPTHead(nn.Module):
         x = self.reassemble_blocks(x)
         for z in x:
             if torch.isnan(z).any() or torch.isinf(z).any():
-                print("Warning: Reassemble blocks is producing NaNs")
+                self.logger.error("Warning: Reassemble blocks is producing NaNs")
         x = [self.convs[i](feature) for i, feature in enumerate(x)]
         for z in x:
             if torch.isnan(z).any() or torch.isinf(z).any():
-                print("Warning: Initial COnv blocks is producing NaNs")
+                self.logger.error("Warning: Initial COnv blocks is producing NaNs")
         out = self.fusion_blocks[0](x[-1])
         if torch.isnan(out).any() or torch.isinf(out).any():
-            print("Warning: Fusion block 1 is producing NaNs")
+            self.logger.error("Warning: Fusion block 1 is producing NaNs")
 
         for i in range(1, len(self.fusion_blocks)):
             out = self.fusion_blocks[i](out, x[-(i + 1)])
             if torch.isnan(out).any() or torch.isinf(out).any():
-                print(f"Warning: Fusion block {i} is producing NaNs")
+                self.logger.error(f"Warning: Fusion block {i} is producing NaNs")
 
         out = self.project(out)
         if torch.isnan(out).any() or torch.isinf(out).any():
-            print(f"Warning: Final projection block is producing NaNs")
+            self.logger.error(f"Warning: Final projection block is producing NaNs")
         return out
 
     def forward(self, inputs):
         out = self.forward_features(inputs)
         out = self.conv_depth(out)
         if torch.isnan(out).any() or torch.isinf(out).any():
-            print(f"Warning: Upconv is producing NaNs")
+            self.logger.error(f"Warning: Upconv is producing NaNs")
         return out
 
     def predict(self, inputs, rescale_to=(512, 512)):
         out = self.forward_features(inputs)
         out = self.conv_depth.predict(out, rescale_to=rescale_to)
         if torch.isnan(out).any() or torch.isinf(out).any():
-            print(f"Warning: Upconv is producing NaNs")
+            self.logger.error(f"Warning: Upconv is producing NaNs")
         return out
