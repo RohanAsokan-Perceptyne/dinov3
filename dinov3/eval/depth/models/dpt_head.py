@@ -525,7 +525,7 @@ class DPTHead(nn.Module):
                 self.logger.error("Warning: Initial COnv blocks is producing NaNs")
         out = self.fusion_blocks[0](x[-1])
         if torch.isnan(out).any() or torch.isinf(out).any():
-            self.logger.error("Warning: Fusion block 1 is producing NaNs")
+            self.logger.error("Warning: Fusion block 0 is producing NaNs")
 
         for i in range(1, len(self.fusion_blocks)):
             out = self.fusion_blocks[i](out, x[-(i + 1)])
