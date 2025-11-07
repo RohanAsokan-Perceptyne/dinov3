@@ -429,6 +429,8 @@ class FeatureFusionBlock(nn.Module):
     def forward(self, *inputs):
         x = inputs[0]
 
+        print(f"FFB log 0: {x.min()} {x.mean()} {x.max()}")
+
         if len(inputs) == 2:
             if x.shape != inputs[1].shape:
                 res = torch.nn.functional.interpolate(
@@ -437,15 +439,21 @@ class FeatureFusionBlock(nn.Module):
                     mode="bilinear",
                     align_corners=False,
                 )
+                print(f"FFB log 1: {res.min()} {res.mean()} {res.max()}")
             else:
                 res = inputs[1]
+                print(f"FFB log 2: {res.min()} {res.mean()} {res.max()}")
             x = x + self.res_conv_unit1(res)
+            print(f"FFB log 3: {x.min()} {x.mean()} {x.max()}")
         x = self.res_conv_unit2(x)  # ok
+        print(f"FFB log 4: {x.min()} {x.mean()} {x.max()}")
 
         x = torch.nn.functional.interpolate(x, scale_factor=2, mode="bilinear", align_corners=self.align_corners)
+        print(f"FFB log 5: {x.min()} {x.mean()} {x.max()}")
         #  ok
 
         x = self.project(x)  # ok
+        print(f"FFB log 6: {x.min()} {x.mean()} {x.max()}")
         return x
 
 
