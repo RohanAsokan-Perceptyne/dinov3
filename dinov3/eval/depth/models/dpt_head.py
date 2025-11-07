@@ -341,6 +341,7 @@ class ReassembleBlocks(nn.Module):
         for i, x in enumerate(inputs):
             assert len(x) == 2
             x, cls_token = x[0], x[1]
+            print(f"RB {i} log 0 {x.min()} {x.mean()} {x.max()}")
             feature_shape = x.shape
             if self.readout_type == "project":
                 x = x.flatten(2).permute((0, 2, 1))
@@ -353,8 +354,11 @@ class ReassembleBlocks(nn.Module):
             else:
                 pass
             x = self.batchnorm_layers[i](x)
+            print(f"RB {i} log 0 {x.min()} {x.mean()} {x.max()}")
             x = self.projects[i](x)
+            print(f"RB {i} log 0 {x.min()} {x.mean()} {x.max()}")
             x = self.resize_layers[i](x)
+            print(f"RB {i} log 0 {x.min()} {x.mean()} {x.max()}")
             out.append(x)
         return out
 
@@ -524,19 +528,23 @@ class DPTHead(nn.Module):
         )
         x = [inp for inp in inputs]
 
+        print("Reassembe blocks called")
         x = self.reassemble_blocks(x)
         for z in x:
             if torch.isnan(z).any() or torch.isinf(z).any():
                 self.logger.error("Warning: Reassemble blocks is producing NaNs")
+        print("Calling NaNs")
         x = [self.convs[i](feature) for i, feature in enumerate(x)]
         for z in x:
             if torch.isnan(z).any() or torch.isinf(z).any():
                 self.logger.error("Warning: Initial COnv blocks is producing NaNs")
+        print("Running FFB 0")
         out = self.fusion_blocks[0](x[-1])
         if torch.isnan(out).any() or torch.isinf(out).any():
             self.logger.error("Warning: Fusion block 0 is producing NaNs")
 
         for i in range(1, len(self.fusion_blocks)):
+            print(f"Running FFB {i}")
             out = self.fusion_blocks[i](out, x[-(i + 1)])
             if torch.isnan(out).any() or torch.isinf(out).any():
                 self.logger.error(f"Warning: Fusion block {i} is producing NaNs")
